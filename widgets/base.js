@@ -3,22 +3,23 @@ import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/extension.js';
 
 export class BaseWidget {
     constructor(settings) {
         this.settings = settings;
-        this.actor = new St.BoxLayout({ style_class: 'widgy-widget' });
+        this.actor = new St.BoxLayout({
+            style_class: 'widgy-widget',
+            reactive: true,
+            can_focus: true,
+            track_hover: true
+        });
         this.actor.set_name(this.constructor.name);
         this._initDrag();
         this._initContextMenu();
     }
 
     _initDrag() {
-        this.actor.set_reactive(true);
-        this.actor.set_can_focus(true);
-        this.actor.set_track_hover(true);
-
         this._stageMotionId = 0;
         let dragging = false;
         let dragStartX = 0, dragStartY = 0;
@@ -114,7 +115,7 @@ export class BaseWidget {
             menu.close();
         });
         menu.addMenuItem(removeItem);
-        Main.uiGroup.add_actor(menu.actor);
+        Main.uiGroup.add_child(menu.actor);
         menu.open(true);
 
         this._contextMenu = menu;

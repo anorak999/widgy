@@ -10,7 +10,7 @@ export class ControlWidget extends BaseWidget {
         this.type = 'control';
 
         // Set layout to vertical
-        this.actor.vertical = true;
+        this.actor.orientation = Clutter.Orientation.VERTICAL;
 
         this._toggles = {};
 

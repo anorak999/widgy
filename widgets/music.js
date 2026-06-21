@@ -44,7 +44,7 @@ export class MusicWidget extends BaseWidget {
         });
         this.actor.add_child(this._albumArt);
 
-        this._infoBox = new St.BoxLayout({ vertical: true });
+        this._infoBox = new St.BoxLayout({ orientation: Clutter.Orientation.VERTICAL });
         this._trackLabel = new St.Label({
             style_class: 'widgy-widget-track',
             text: 'No track playing'

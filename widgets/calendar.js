@@ -15,7 +15,7 @@ export class CalendarWidget extends BaseWidget {
         });
         this.actor.add_child(this._dateLabel);
 
-        this._eventsBox = new St.BoxLayout({ vertical: true });
+        this._eventsBox = new St.BoxLayout({ orientation: Clutter.Orientation.VERTICAL });
         this.actor.add_child(this._eventsBox);
 
         this._updateDate();
