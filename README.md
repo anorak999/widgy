@@ -26,7 +26,7 @@ A desktop widget library with glassmorphic widgets inspired by macOS Sonoma.
 
 1. Clone or copy this directory to `~/.local/share/gnome-shell/extensions/widgy@anorak.example.com`
    ```bash
-   git clone https://github.com/anorak/widgy.git ~/.local/share/gnome-shell/extensions/widgy@anorak.example.com
+   git clone https://github.com/anorak999/widgy.git ~/.local/share/gnome-shell/extensions/widgy@anorak.example.com
    ```
 2. Ensure the metadata.json UUID matches the directory name.
 3. Compile the schemas:

@@ -1,0 +1,28 @@
+# Claude Code
+.claude/
+.remember/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*~
+*.tmp
+*.temp
+
+# Build artifacts (if any)
+/build/
+/dist/
+/out/
+
+# Dependency directories (if using npm, etc.)
+node_modules/
+__pycache__/
+*.pyc
+
+# GNOME Shell extension specific
+# (nothing extra currently)
