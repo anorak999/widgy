@@ -6,6 +6,7 @@ EXTENSION_DIR = ~/.local/share/gnome-shell/extensions/$(UUID)
 all: zip
 
 zip:
+	rm -f $(UUID).zip
 	zip -r $(UUID).zip . -x "*.git*" "*~" "#*#" "*.swp" "*.DS_Store" "__MACOSX" "*.zip"
 
 install: zip
