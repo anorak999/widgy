@@ -1,4 +1,5 @@
 import St from 'gi://St';
+import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -18,70 +19,92 @@ export class BaseWidget {
         this.actor.set_can_focus(true);
         this.actor.set_track_hover(true);
 
-        let dragged = false;
+        this._stageMotionId = 0;
+        let dragging = false;
         let dragStartX = 0, dragStartY = 0;
         let actorStartX = 0, actorStartY = 0;
 
-        this.actor.connect('button-press-event', (actor, event) => {
-            if (event.get_button() === 1) { // left mouse button
-                dragged = false;
-                dragStartX = event.get_x();
-                dragStartY = event.get_y();
+        this._dragPressId = this.actor.connect('button-press-event', (actor, event) => {
+            if (event.get_button() === 1) {
+                dragging = false;
+                [dragStartX, dragStartY] = event.get_coords();
                 [actorStartX, actorStartY] = this.actor.get_position();
-                return true;
+
+                // Connect stage-level motion handler to capture events outside the actor
+                if (!this._stageMotionId) {
+                    this._stageMotionId = global.stage.connect('motion-event', (stage, event) => {
+                        // Verify button 1 is still held, not a phantom drag
+                        let state = event.get_state();
+                        if (!(state & Clutter.ModifierType.BUTTON1_MASK)) {
+                            dragging = false;
+                            return Clutter.EVENT_PROPAGATE;
+                        }
+
+                        let [x, y] = event.get_coords();
+
+                        // Check drag threshold
+                        if (!dragging) {
+                            let dx = Math.abs(x - dragStartX);
+                            let dy = Math.abs(y - dragStartY);
+                            if (dx > 5 || dy > 5) {
+                                dragging = true;
+                            } else {
+                                return Clutter.EVENT_PROPAGATE;
+                            }
+                        }
+
+                        // Calculate new position using stage-relative delta
+                        let dx = x - dragStartX;
+                        let dy = y - dragStartY;
+                        let newX = Math.round(actorStartX + dx);
+                        let newY = Math.round(actorStartY + dy);
+
+                        // Apply grid snapping if enabled
+                        if (this.settings.get_boolean('widget-snap-grid')) {
+                            const snapSize = 20;
+                            newX = Math.round(newX / snapSize) * snapSize;
+                            newY = Math.round(newY / snapSize) * snapSize;
+                        }
+
+                        this.actor.set_position(newX, newY);
+                        return Clutter.EVENT_STOP;
+                    });
+                }
+                return Clutter.EVENT_STOP;
             }
-            return false;
+            return Clutter.EVENT_PROPAGATE;
         });
 
-        this.actor.connect('motion-event', (actor, event) => {
-            if (dragged) {
-                let x = event.get_x();
-                let y = event.get_y();
-                let dx = x - dragStartX;
-                let dy = y - dragStartY;
-                let newX = Math.round(actorStartX + dx);
-                let newY = Math.round(actorStartY + dy);
-                // Apply grid snapping if enabled
-                if (this.settings.get_boolean('widget-snap-grid')) {
-                    const snapSize = 20; // pixels
-                    newX = Math.round(newX / snapSize) * snapSize;
-                    newY = Math.round(newY / snapSize) * snapSize;
+        this._dragReleaseId = this.actor.connect('button-release-event', (actor, event) => {
+            if (event.get_button() === 1) {
+                dragging = false;
+                if (this._stageMotionId) {
+                    global.stage.disconnect(this._stageMotionId);
+                    this._stageMotionId = 0;
                 }
-                this.actor.set_position(newX, newY);
-                return true;
-            } else {
-                // Check if we have moved enough to start dragging
-                let x = event.get_x();
-                let y = event.get_y();
-                let dx = Math.abs(x - dragStartX);
-                let dy = Math.abs(y - dragStartY);
-                if (dx > 5 || dy > 5) {
-                    dragged = true;
-                }
+                return Clutter.EVENT_STOP;
             }
-            return false;
-        });
-
-        this.actor.connect('button-release-event', (actor, event) => {
-            if (event.get_button() === 1 && dragged) {
-                dragged = false;
-                return true;
-            }
-            return false;
+            return Clutter.EVENT_PROPAGATE;
         });
     }
 
     _initContextMenu() {
         this.actor.connect('button-press-event', (actor, event) => {
-            if (event.get_button() === 3) { // right click
+            if (event.get_button() === 3) {
                 this._showContextMenu(event);
-                return true;
+                return Clutter.EVENT_STOP;
             }
-            return false;
+            return Clutter.EVENT_PROPAGATE;
         });
     }
 
     _showContextMenu(event) {
+        // Destroy existing menu before creating a new one to prevent memory leaks
+        if (this._contextMenu) {
+            this._contextMenu.destroy();
+            this._contextMenu = null;
+        }
+
         let menu = new PopupMenu.PopupMenu(this.actor, 0.5, St.Side.BOTTOM);
         let removeItem = new PopupMenu.PopupMenuItem(_("Remove Widget"));
         removeItem.connect('activate', () => {
@@ -93,6 +116,8 @@ export class BaseWidget {
         menu.addMenuItem(removeItem);
         Main.uiGroup.add_actor(menu.actor);
         menu.open(true);
+
+        this._contextMenu = menu;
     }
 
     setPosition(x, y) {
@@ -104,6 +129,28 @@ export class BaseWidget {
     }
 
     destroy() {
+        // Disconnect stage-level motion handler to prevent leaks
+        if (this._stageMotionId) {
+            global.stage.disconnect(this._stageMotionId);
+            this._stageMotionId = 0;
+        }
+
+        // Disconnect actor-level signal handlers
+        if (this._dragPressId) {
+            this.actor.disconnect(this._dragPressId);
+            this._dragPressId = 0;
+        }
+        if (this._dragReleaseId) {
+            this.actor.disconnect(this._dragReleaseId);
+            this._dragReleaseId = 0;
+        }
+
+        // Destroy cached context menu to prevent leaks
+        if (this._contextMenu) {
+            this._contextMenu.destroy();
+            this._contextMenu = null;
+        }
+
         this.actor.destroy();
     }
 }

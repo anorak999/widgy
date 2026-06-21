@@ -121,6 +121,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.0.2
+
+- **Fixed:** Drag no longer activates without a button held — motion handler now checks `event.get_state() & Clutter.ModifierType.BUTTON1_MASK`
+- **Fixed:** Drag no longer loses events when cursor leaves widget bounds — motion captured on `global.stage` instead of the actor
+- **Fixed:** Coordinate drift during drag — switched from actor-relative `get_x()`/`get_y()` to stage-relative `get_coords()`
+- **Fixed:** Context menu memory leak — PopupMenu instance is now cached and destroyed before creating a new one
+- **Fixed:** Stage motion handler leak on extension disable — properly disconnected in `destroy()`
+- **Style:** `_initContextMenu()` now uses `Clutter.EVENT_STOP`/`Clutter.EVENT_PROPAGATE` for consistency with drag code
+
 ### v1.0.1
 
 - **Fixed:** Replaced invalid `pointer-motion-event` signal with correct `motion-event` signal for widget drag functionality (resolved runtime error on `StBoxLayout`)
