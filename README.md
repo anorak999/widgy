@@ -96,3 +96,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Inspired by macOS Sonoma's widget design
 - Uses [Open-Meteo](https://open-meteo.com/) for weather data
 - Built with GNOME Shell's JavaScript API
+
+## Contact
+
+For questions or feedback, email himath.hr@gmail.com
