@@ -1,5 +1,4 @@
 import St from 'gi://St';
-import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -19,28 +18,57 @@ export class BaseWidget {
         this.actor.set_can_focus(true);
         this.actor.set_track_hover(true);
 
-        let drag = Clutter.DragAction.new();
-        drag.set_button(1); // left mouse button
-        drag.connect('drag-begin', (action, x, y) => {
-            this._dragStartX = x;
-            this._dragStartY = y;
-            this._actorStartX = this.actor.get_x();
-            this._actorStartY = this.actor.get_y();
-        });
-        drag.connect('drag-update', (action, x, y, state) => {
-            let dx = x - this._dragStartX;
-            let dy = y - this._dragStartY;
-            let newX = Math.round(this._actorStartX + dx);
-            let newY = Math.round(this._actorStartY + dy);
-            // Apply grid snapping if enabled
-            if (this.settings.get_boolean('widget-snap-grid')) {
-                const snapSize = 20; // pixels
-                newX = Math.round(newX / snapSize) * snapSize;
-                newY = Math.round(newY / snapSize) * snapSize;
+        let dragged = false;
+        let dragStartX = 0, dragStartY = 0;
+        let actorStartX = 0, actorStartY = 0;
+
+        this.actor.connect('button-press-event', (actor, event) => {
+            if (event.get_button() === 1) { // left mouse button
+                dragged = false;
+                dragStartX = event.get_x();
+                dragStartY = event.get_y();
+                [actorStartX, actorStartY] = this.actor.get_position();
+                return true;
             }
-            this.actor.set_position(newX, newY);
+            return false;
         });
-        this.actor.add_action(drag);
+
+        this.actor.connect('pointer-motion-event', (actor, event) => {
+            if (dragged) {
+                let x = event.get_x();
+                let y = event.get_y();
+                let dx = x - dragStartX;
+                let dy = y - dragStartY;
+                let newX = Math.round(actorStartX + dx);
+                let newY = Math.round(actorStartY + dy);
+                // Apply grid snapping if enabled
+                if (this.settings.get_boolean('widget-snap-grid')) {
+                    const snapSize = 20; // pixels
+                    newX = Math.round(newX / snapSize) * snapSize;
+                    newY = Math.round(newY / snapSize) * snapSize;
+                }
+                this.actor.set_position(newX, newY);
+                return true;
+            } else {
+                // Check if we have moved enough to start dragging
+                let x = event.get_x();
+                let y = event.get_y();
+                let dx = Math.abs(x - dragStartX);
+                let dy = Math.abs(y - dragStartY);
+                if (dx > 5 || dy > 5) {
+                    dragged = true;
+                }
+            }
+            return false;
+        });
+
+        this.actor.connect('button-release-event', (actor, event) => {
+            if (event.get_button() === 1 && dragged) {
+                dragged = false;
+                return true;
+            }
+            return false;
+        });
     }
 
     _initContextMenu() {
