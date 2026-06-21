@@ -64,14 +64,18 @@ export default class WidgyPreferences extends ExtensionPreferences {
         group.add(snapRow);
 
         // 4. Weather Location Setting
-        const locationRow = new Adw.EntryRow({
+        const locationRow = new Adw.ActionRow({
             title: _('Weather Location'),
             subtitle: _('Latitude,longitude (e.g. 40.7128,-74.0060) or "auto"')
         });
-        locationRow.text = settings.get_string('weather-location');
-        locationRow.connect('notify::text', () => {
-            settings.set_string('weather-location', locationRow.text);
+        const locationEntry = new Adw.Entry({
+            text: settings.get_string('weather-location')
         });
+        locationEntry.set_hexpand(true);
+        locationEntry.connect('notify::text', () => {
+            settings.set_string('weather-location', locationEntry.text);
+        });
+        locationRow.add_suffix(locationEntry);
         group.add(locationRow);
     }
 }
