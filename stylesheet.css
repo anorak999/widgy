@@ -1,0 +1,206 @@
+/* Widgy Extension Stylesheet */
+
+/* Base widget container */
+.widgy-widget {
+    background-color: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    padding: 16px;
+    transition: all 0.3s ease;
+}
+
+/* Slightly different appearance when active (desktop focused) */
+.widgy-widget:active,
+.widgy-widget:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Widget labels */
+.widgy-widget-label {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Secondary text */
+.widgy-widget-label.dim {
+    opacity: 0.8;
+}
+
+/* Clock specific */
+.widgy-widget .clock-hand {
+    /* Will be styled in JS if we implement analog clock */
+}
+
+/* Calendar events */
+.widgy-widget-event {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 4px 0;
+}
+
+/* Music widget */
+.widgy-widget-album-art {
+    icon-size: 64px;
+    border-radius: 12px;
+}
+
+.widgy-widget-track {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.widgy-widget-artist {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.widgy-widget-button {
+    background-color: transparent;
+    border-radius: 12px;
+    padding: 8px;
+    transition: background-color 0.2s;
+}
+
+.widgy-widget-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.widgy-widget-button:active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.widgy-widget-icon {
+    icon-size: 20px;
+    color: #ffffff;
+}
+
+/* Control widget */
+.widgy-widget-control-button {
+    background-color: transparent;
+    border-radius: 16px;
+    padding: 12px;
+    transition: background-color 0.2s;
+}
+
+.widgy-widget-control-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.widgy-widget-control-button:active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.widgy-widget-control-button.active {
+    background-color: rgba(0, 120, 215, 0.3); /* Blue accent */
+}
+
+.widgy-widget-control-icon {
+    icon-size: 24px;
+    color: #ffffff;
+}
+
+/* Weather widget */
+.widgy-widget-weather-icon {
+    icon-size: 48px;
+}
+
+.widgy-widget-temperature {
+    font-size: 2.5em;
+    font-weight: 300;
+    color: #ffffff;
+}
+
+.widgy-widget-condition {
+    font-size: 1.1em;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* General text adjustments for dark/light themes */
+/* These will be overridden by theme-specific styles if needed */
+
+/* Light theme adjustments */
+.widgy-widget.light-theme {
+    background-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.1);
+}
+
+.widgy-widget.light-theme .widgy-widget-label {
+    color: #000000;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.widgy-widget.light-theme .widgy-widget-label.dim {
+    opacity: 0.6;
+}
+
+.widgy-widget.light-theme .widgy-widget-event {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.widgy-widget.light-theme .widgy-widget-track {
+    color: #000000;
+}
+
+.widgy-widget.light-theme .widgy-widget-artist {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.widgy-widget.light-theme .widgy-widget-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.widgy-widget.light-theme .widgy-widget-button:active {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.widgy-widget.light-theme .widgy-widget-icon {
+    color: #000000;
+}
+
+.widgy-widget.light-theme .widgy-widget-control-icon {
+    color: #000000;
+}
+
+.widgy-widget.light-theme .widgy-widget-control-button.active {
+    background-color: rgba(0, 120, 215, 0.2);
+}
+
+/* Dark theme adjustments (default is dark) */
+.widgy-widget.dark-theme {
+    /* Already dark by default */
+}
+
+/* Size classes */
+.widgy-widget.size-small {
+    width: 180px;
+    height: 180px;
+}
+
+.widgy-widget.size-medium {
+    width: 320px;
+    height: 180px;
+    /* For vertical medium, we could have another class */
+}
+
+.widgy-widget.size-large {
+    width: 320px;
+    height: 320px;
+}
+
+/* Animation for when widgets are added */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.widgy-widget {
+    animation: fadeIn 0.3s ease-out forwards;
+}

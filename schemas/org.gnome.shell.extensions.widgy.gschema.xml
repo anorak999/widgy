@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.widgy" path="/org/gnome/shell/extensions/widgy/">
+    <key name="theme" type="s">
+      <default>auto</default>
+      <summary>Preferred theme</summary>
+      <description>Whether to use auto (follow system), dark, or light theme for widgets.</description>
+      <allowed>
+        <value>auto</value>
+        <value>dark</value>
+        <value>light</value>
+      </allowed>
+    </key>
+    <key name="opacity" type="d">
+      <default>0.8</default>
+      <summary>Global widget opacity</summary>
+      <description>Base opacity for all widgets (0.0 to 1.0).</description>
+      <min>0.2</min>
+      <max>1.0</max>
+      <step>0.05</step>
+    </key>
+    <key name="widget-snap-grid" type="b">
+      <default>true</default>
+      <summary>Snap widgets to grid</summary>
+      <description>When enabled, widgets will snap to a 20px grid when dragged.</description>
+    </key>
+    <key name="weather-location" type="s">
+      <default>auto</default>
+      <summary>Weather location</summary>
+      <description>Location for weather widget as latitude,longitude (e.g., "40.7128,-74.0060") or "auto" for a default location.</description>
+    </key>
+    <key name="widget-positions" type="aa(ii)">
+      <default>[['clock', 100, 100], ['calendar', 300, 100], ['music', 100, 300], ['control', 300, 300], ['weather', 500, 200]]</default>
+      <summary>Saved widget positions</summary>
+      <description>List of widget types and their X,Y positions.</description>
+    </key>
+  </schema>
+</schemalist>

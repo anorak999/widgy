@@ -1,0 +1,10 @@
+{
+  "uuid": "widgy@anorak.example.com",
+  "name": "Widgy",
+  "description": "A desktop widget library with glassmorphic widgets inspired by macOS Sonoma",
+  "version": "1.0.0",
+  "shell-version": ["46", "47", "48"],
+  "url": "https://github.com/anorak/widgy",
+  "settings-schema": "org.gnome.shell.extensions.widgy",
+  "default-orientation": "vertical"
+}
