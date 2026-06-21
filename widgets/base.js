@@ -33,7 +33,7 @@ export class BaseWidget {
             return false;
         });
 
-        this.actor.connect('pointer-motion-event', (actor, event) => {
+        this.actor.connect('motion-event', (actor, event) => {
             if (dragged) {
                 let x = event.get_x();
                 let y = event.get_y();

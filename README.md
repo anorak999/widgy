@@ -119,6 +119,14 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Changelog
+
+### v1.0.1
+
+- **Fixed:** Replaced invalid `pointer-motion-event` signal with correct `motion-event` signal for widget drag functionality (resolved runtime error on `StBoxLayout`)
+- **Audited:** Verified all signal connections across the codebase for correctness
+- **Reviewed:** Identified and documented drag implementation improvements (button state tracking, stage-level motion capture)
+
 ## Acknowledgments
 
 - Inspired by macOS Sonoma's widget design
