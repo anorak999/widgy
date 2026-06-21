@@ -12,10 +12,10 @@ A desktop widget library with glassmorphic widgets inspired by macOS Sonoma.
 - **Widget library** including:
   - 🕒 Clock (digital)
   - 📅 Calendar (date and events)
-  - 🎵 Music player (MPRIS integration)
-  - 🎛️ Control center (quick toggles)
-  - 🌤️ Weather (Open-Meteo API)
-- **Easy to extend** with new widgets
+  - 🎵 Music player (MPRIS integration with dynamic player detection)
+  - 🎛️ Control center (quick toggles for WiFi, Bluetooth, Night Light, etc.)
+  - 🌤️ Weather (Open-Meteo API using libsoup 3.0)
+- **Modern Architecture** built on ESM (ECMAScript Modules) for GNOME Shell 45 to 48+
 - **Theme support** (auto, dark, light)
 - **Global opacity control**
 - **Weather location** configurable (latitude,longitude or "auto")
@@ -24,56 +24,86 @@ A desktop widget library with glassmorphic widgets inspired by macOS Sonoma.
 
 ### From Source
 
-1. Clone or copy this directory to `~/.local/share/gnome-shell/extensions/widgy@anorak.example.com`
-   ```bash
-   git clone https://github.com/anorak999/widgy.git ~/.local/share/gnome-shell/extensions/widgy@anorak.example.com
-   ```
-2. Ensure the metadata.json UUID matches the directory name.
-3. Compile the schemas:
-   ```bash
-   glib-compile-schemas ~/.local/share/gnome-shell/extensions/widgy@anorak.example.com/schemas/
-   ```
-4. Enable the extension via:
-   - GNOME Extensions app
-   - Or run: `gnome-extensions enable widgy@anorak.example.com`
+The easiest way to install and compile the extension is using the provided `Makefile`:
 
-### From extensions.gnome.org (when published)
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/anorak999/widgy.git
+   cd widgy
+   ```
+2. Build and install:
+   ```bash
+   make install
+   ```
+   This will automatically zip the extension, install it to `~/.local/share/gnome-shell/extensions/`, compile the GSettings schemas, and attempt to enable it.
 
-Visit the Widgy page on [extensions.gnome.org](https://extensions.gnome.org/) and toggle the switch.
+3. **Restart GNOME Shell**:
+   GNOME Shell must be restarted for it to register the new extension files:
+   - **Wayland**: Log out and log back in.
+   - **X11**: Press `Alt + F2`, type `r`, and press `Enter`.
+
+4. Enable the extension (if not already enabled) using the **Extensions** (or **Extension Manager**) app, or run:
+   ```bash
+   gnome-extensions enable widgy@anorak.example.com
+   ```
+
+### Uninstalling
+
+To uninstall the extension, simply run:
+```bash
+make uninstall
+```
 
 ## Usage
 
-- Right-click on a widget to remove it.
+- Right-click on a widget to bring up the context menu and remove it.
 - Drag widgets to reposition them (with optional grid snapping).
-- Access preferences via the Extensions app or by running:
+- Access preferences via the GNOME Extensions/Extension Manager app or by running:
   ```bash
   gnome-extensions prefs widgy@anorak.example.com
   ```
 
 ## Customization
 
-- Adjust theme, opacity, and snap-to-grid in preferences.
+- Adjust theme, opacity, and snap-to-grid in the modern libadwaita preferences panel.
 - Set weather location in preferences (latitude,longitude or "auto" for default).
 
 ## Development
 
-To add a new widget:
+Widgy is fully ported to GNOME Shell's modern ESM (ECMAScript Modules) architecture (GNOME 45+).
 
-1. Create a new file in `widgets/` (e.g., `mywidget.js`)
-2. Extend the `BaseWidget` class from `widgets/base.js`
-3. Register the widget type in `extension.js` in the `createWidget` function.
-4. Add any necessary settings in the schema if needed.
+### To add a new widget:
 
-### Widget Structure
+1. Create a new file in `widgets/` (e.g., `mywidget.js`).
+2. Implement your widget class extending `BaseWidget` from `./base.js`, and export it:
+   ```javascript
+   import St from 'gi://St';
+   import { BaseWidget } from './base.js';
 
-Each widget should:
-- Extend `BaseWidget`
-- Set `this.type` in the constructor
-- Create UI elements and add them to `this.actor`
-- Implement a `destroy()` method that cleans up any timeouts or connections
-- Optionally implement update methods called via `Mainloop.timeout_add_seconds`
+   export class MyWidget extends BaseWidget {
+       constructor(settings) {
+           super(settings);
+           this.type = 'mywidget';
+           
+           let label = new St.Label({ text: 'Hello World!' });
+           this.actor.add_child(label);
+       }
+   }
+   ```
+3. Import and register the widget in `extension.js` inside the `createWidget` factory:
+   ```javascript
+   import { MyWidget } from './widgets/mywidget.js';
+   // ...
+   switch (type) {
+       case 'mywidget':
+           WidgetClass = MyWidget;
+           break;
+   }
+   ```
 
-See existing widgets (`clock.js`, `calendar.js`, etc.) for examples.
+### Preferences (prefs.js)
+
+Extension preferences are built using **Libadwaita** and GTK4 preference rows (e.g., `Adw.ComboRow`, `Adw.ActionRow`, `Adw.SwitchRow`, `Adw.EntryRow`), ensuring a native GNOME settings look and feel.
 
 ## Contributing
 
@@ -85,8 +115,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-Please make sure to update tests as appropriate.
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -95,8 +123,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Inspired by macOS Sonoma's widget design
 - Uses [Open-Meteo](https://open-meteo.com/) for weather data
-- Built with GNOME Shell's JavaScript API
-
-## Contact
-
-For questions or feedback, email himath.hr@gmail.com
+- Built with GNOME Shell's modern JavaScript API

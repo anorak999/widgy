@@ -25,4 +25,5 @@ __pycache__/
 *.pyc
 
 # GNOME Shell extension specific
-# (nothing extra currently)
+*.compiled
+*.zip

@@ -1,34 +1,33 @@
-const St = imports.gi.St;
-const Clutter = imports.gi.Clutter;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Main = imports.ui.main;
-const PopupMenu = imports.ui.popupMenu;
-const Lang = imports.lang;
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import { BaseWidget } from './base.js';
 
-const BaseWidget = require('./base.js');
-
-const ControlWidget = class ControlWidget extends BaseWidget {
+export class ControlWidget extends BaseWidget {
     constructor(settings) {
         super(settings);
         this.type = 'control';
 
+        // Set layout to vertical
+        this.actor.vertical = true;
+
         this._toggles = {};
 
-        let grid = new St.GridLayout();
-        this.actor.set_layout_manager(grid);
+        let row1 = new St.BoxLayout({ x_expand: true, y_expand: true, style: 'margin-bottom: 8px;' });
+        let row2 = new St.BoxLayout({ x_expand: true, y_expand: true });
+        this.actor.add_child(row1);
+        this.actor.add_child(row2);
 
-        // Define the toggles we want: WiFi, Bluetooth, Volume, Brightness, Night Light
         let items = [
             { name: 'WiFi', icon: 'network-wireless-symbolic', setting: 'org.gnome.NetworkManager', key: 'wireless-enabled' },
             { name: 'Bluetooth', icon: 'bluetooth-symbolic', setting: 'org.gnome.bluetooth', key: 'enabled' },
-            { name: 'Volume', icon: 'audio-volume-medium-symbolic', setting: 'org.gnome.desktop.sound', key: 'allow-volume-above-100' }, // Not perfect, but we'll use a proxy
-            { name: 'Brightness', icon: 'display-brightness-symbolic', setting: 'org.gnome.settings-daemon.plugins.power', key: 'idle-dim' }, // Not brightness, but we'll use a different approach
-            { name: 'Night Light', icon: 'weather-night-symbolic', setting: 'org.gnome.settings-daemon.plugins.color', key: 'night-light-enabled' }
+            { name: 'Night Light', icon: 'weather-night-symbolic', setting: 'org.gnome.settings-daemon.plugins.color', key: 'night-light-enabled' },
+            { name: 'Volume', icon: 'audio-volume-medium-symbolic', setting: 'org.gnome.desktop.sound', key: 'allow-volume-above-100' },
+            { name: 'Brightness', icon: 'display-brightness-symbolic', setting: 'org.gnome.settings-daemon.plugins.power', key: 'idle-dim' }
         ];
 
-        // We'll create a toggle for each
-        for (let i, item of items.enumerate()) {
+        for (let [i, item] of items.entries()) {
             let button = new St.Button({
                 style_class: 'widgy-widget-control-button',
                 x_expand: true,
@@ -40,25 +39,26 @@ const ControlWidget = class ControlWidget extends BaseWidget {
                 style_class: 'widgy-widget-control-icon'
             });
             button.set_child(icon);
-            button.connect('clicked', Lang.bind(this, () => this._toggleItem(item)));
+            button.connect('clicked', () => this._toggleItem(item));
             this._toggles[item.name] = { button: button, item: item };
-            grid.add_child(button, { row: Math.floor(i / 3), col: i % 3 });
+
+            if (i < 3) {
+                row1.add_child(button);
+            } else {
+                row2.add_child(button);
+            }
         }
 
-        // For volume and brightness, we'll use sliders or adjust via shell, but for simplicity, we'll just toggle a placeholder.
-        // We'll implement volume and brightness in a more advanced version.
-
-        // Load initial states
         this._updateToggles();
     }
 
     _toggleItem(item) {
-        let settings = new Gio.Settings({ schema: item.setting });
         try {
+            let settings = new Gio.Settings({ schema: item.setting });
             let current = settings.get_boolean(item.key);
             settings.set_boolean(item.key, !current);
         } catch (e) {
-            log('Failed to toggle ' + item.name + ': ' + e);
+            console.error('Failed to toggle ' + item.name + ': ' + e);
         }
         this._updateToggles();
     }
@@ -66,8 +66,8 @@ const ControlWidget = class ControlWidget extends BaseWidget {
     _updateToggles() {
         for (let [name, toggle] of Object.entries(this._toggles)) {
             let { button, item } = toggle;
-            let settings = new Gio.Settings({ schema: item.setting });
             try {
+                let settings = new Gio.Settings({ schema: item.setting });
                 let value = settings.get_boolean(item.key);
                 if (value) {
                     button.add_style_class_name('active');
@@ -75,17 +75,8 @@ const ControlWidget = class ControlWidget extends BaseWidget {
                     button.remove_style_class_name('active');
                 }
             } catch (e) {
-                // If the setting doesn't exist, we'll just show as inactive
                 button.remove_style_class_name('active');
             }
         }
     }
-
-    destroy() {
-        super.destroy();
-    }
-};
-
-if (typeof module !== 'undefined') {
-    module.exports = ControlWidget;
 }

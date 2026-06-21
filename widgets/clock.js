@@ -1,13 +1,10 @@
-const St = imports.gi.St;
-const Clutter = imports.gi.Clutter;
-const GObject = imports.gi.GObject;
-const Main = imports.ui.main;
-const PopupMenu = imports.ui.popupMenu;
-const Lang = imports.lang;
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
+import GLib from 'gi://GLib';
+import { BaseWidget } from './base.js';
 
-const BaseWidget = require('./base.js');
-
-const ClockWidget = class ClockWidget extends BaseWidget {
+export class ClockWidget extends BaseWidget {
     constructor(settings) {
         super(settings);
         this.type = 'clock';
@@ -18,9 +15,11 @@ const ClockWidget = class ClockWidget extends BaseWidget {
         });
         this.actor.add_child(this._timeLabel);
 
-        // For now, we'll just show digital time. We can add analog later.
         this._updateTime();
-        this._timeId = Mainloop.timeout_add_seconds(1, Lang.bind(this, this._updateTime));
+        this._timeId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
+            this._updateTime();
+            return GLib.SOURCE_CONTINUE;
+        });
     }
 
     _updateTime() {
@@ -28,17 +27,13 @@ const ClockWidget = class ClockWidget extends BaseWidget {
         let hours = now.getHours().toString().padStart(2, '0');
         let minutes = now.getMinutes().toString().padStart(2, '0');
         this._timeLabel.set_text(`${hours}:${minutes}`);
-        return GObject.SOURCE_CONTINUE;
     }
 
     destroy() {
         if (this._timeId) {
-            Mainloop.source_remove(this._timeId);
+            GLib.source_remove(this._timeId);
+            this._timeId = null;
         }
         super.destroy();
     }
-};
-
-if (typeof module !== 'undefined') {
-    module.exports = ClockWidget;
 }

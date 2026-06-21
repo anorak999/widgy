@@ -1,10 +1,11 @@
-const St = imports.gi.St;
-const Clutter = imports.gi.Clutter;
-const GObject = imports.gi.GObject;
-const Main = imports.ui.main;
-const PopupMenu = imports.ui.popupMenu;
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const BaseWidget = class BaseWidget {
+export class BaseWidget {
     constructor(settings) {
         this.settings = settings;
         this.actor = new St.BoxLayout({ style_class: 'widgy-widget' });
@@ -53,20 +54,17 @@ const BaseWidget = class BaseWidget {
     }
 
     _showContextMenu(event) {
-        let menu = new PopupMenu.PopupMenu();
+        let menu = new PopupMenu.PopupMenu(this.actor, 0.5, St.Side.BOTTOM);
         let removeItem = new PopupMenu.PopupMenuItem(_("Remove Widget"));
         removeItem.connect('activate', () => {
-            if (this._onRemove) {
-                this._onRemove(this);
+            if (this.onRemove) {
+                this.onRemove(this);
             }
             menu.close();
         });
         menu.addMenuItem(removeItem);
-        menu.open({
-            point: event.get_coords(),
-            anchor: Clutter.Gravity.SOUTH_WEST,
-            animate: true
-        });
+        Main.uiGroup.add_actor(menu.actor);
+        menu.open(true);
     }
 
     setPosition(x, y) {
@@ -80,8 +78,4 @@ const BaseWidget = class BaseWidget {
     destroy() {
         this.actor.destroy();
     }
-};
-
-if (typeof module !== 'undefined') {
-    module.exports = BaseWidget;
 }

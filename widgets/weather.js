@@ -1,15 +1,12 @@
-const St = imports.gi.St;
-const Clutter = imports.gi.Clutter;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Main = imports.ui.main;
-const PopupMenu = imports.ui.popupMenu;
-const Lang = imports.lang;
-const Soup = imports.gi.Soup;
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Soup from 'gi://Soup?version=3.0';
+import { BaseWidget } from './base.js';
 
-const BaseWidget = require('./base.js');
-
-const WeatherWidget = class WeatherWidget extends BaseWidget {
+export class WeatherWidget extends BaseWidget {
     constructor(settings) {
         super(settings);
         this.type = 'weather';
@@ -38,43 +35,42 @@ const WeatherWidget = class WeatherWidget extends BaseWidget {
         this.actor.add_child(this._conditionLabel);
 
         this._updateWeather();
-        this._weatherId = Mainloop.timeout_add_seconds(1800, Lang.bind(this, this._updateWeather)); // 30 minutes
+        // Update weather every 30 minutes
+        this._weatherId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1800, () => {
+            this._updateWeather();
+            return GLib.SOURCE_CONTINUE;
+        });
     }
 
     _updateWeather() {
         if (this._location === 'auto') {
-            // For simplicity, we'll use a fixed location (e.g., New York) or try to get from GeoClue.
-            // We'll use a fixed location for now.
-            this._fetchWeather(40.7128, -74.0060); // New York
+            this._fetchWeather(40.7128, -74.0060); // Default: New York
         } else {
-            // Try to parse as "lat,lon"
             let parts = this._location.split(',').map(s => parseFloat(s.trim()));
             if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
                 this._fetchWeather(parts[0], parts[1]);
             } else {
-                // Treat as city name and use a geocoding API? For simplicity, we'll use a fixed location.
                 this._fetchWeather(40.7128, -74.0060);
             }
         }
-        return GObject.SOURCE_CONTINUE;
     }
 
     _fetchWeather(lat, lon) {
         let url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius&windspeed_unit=kmh&precipitation_unit=mm`;
-        let session = new Soup.SessionAsync();
+        let session = new Soup.Session();
         let message = Soup.Message.new('GET', url);
-        session.queue_message(message, Lang.bind(this, (session, message) => {
-            if (message.status_code !== 200) {
-                log('Weather request failed: ' + message.status_code);
-                return;
-            }
+        
+        session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
             try {
-                let data = JSON.parse(message.response_body.data);
+                let bytes = session.send_and_read_finish(result);
+                let decoder = new TextDecoder('utf-8');
+                let responseText = decoder.decode(bytes.toArray());
+                let data = JSON.parse(responseText);
                 this._processWeatherData(data);
             } catch (e) {
-                log('Failed to parse weather data: ' + e);
+                console.error('Failed to fetch/parse weather data: ' + e);
             }
-        }));
+        });
     }
 
     _processWeatherData(data) {
@@ -83,14 +79,15 @@ const WeatherWidget = class WeatherWidget extends BaseWidget {
         }
         let weather = data.current_weather;
         this._temperature = Math.round(weather.temperature);
-        this._condition = weather.weathercode; // We'll map to a condition and icon
+        this._condition = weather.weathercode;
         this._updateDisplay();
     }
 
     _updateDisplay() {
-        this._tempLabel.set_text(`${this._temperature}°`);
-        // Map weather code to icon and condition text
-        // Based on WMO weather codes (https://open-meteo.com/en/docs)
+        if (this._temperature !== null) {
+            this._tempLabel.set_text(`${this._temperature}°`);
+        }
+        
         let code = this._condition;
         let iconName = 'weather-clear-symbolic';
         let conditionText = 'Clear';
@@ -117,12 +114,9 @@ const WeatherWidget = class WeatherWidget extends BaseWidget {
 
     destroy() {
         if (this._weatherId) {
-            Mainloop.source_remove(this._weatherId);
+            GLib.source_remove(this._weatherId);
+            this._weatherId = null;
         }
         super.destroy();
     }
-};
-
-if (typeof module !== 'undefined') {
-    module.exports = WeatherWidget;
 }

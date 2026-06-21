@@ -1,20 +1,41 @@
-const St = imports.gi.St;
-const Clutter = imports.gi.Clutter;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Main = imports.ui.main;
-const PopupMenu = imports.ui.popupMenu;
-const Lang = imports.lang;
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import { BaseWidget } from './base.js';
 
-const BaseWidget = require('./base.js');
+// Simple MPRIS interface definitions
+const MprisPlayerIface = `<node>
+  <interface name="org.mpris.MediaPlayer2.Player">
+    <method name="PlayPause"/>
+    <method name="Previous"/>
+    <method name="Next"/>
+    <method name="Stop"/>
+    <property name="PlaybackStatus" type="s" access="read"/>
+    <property name="Metadata" type="a{sv}" access="read"/>
+  </interface>
+</node>`;
 
-const MusicWidget = class MusicWidget extends BaseWidget {
+const MprisPlayerProxy = Gio.DBusProxy.makeProxyWrapper(MprisPlayerIface);
+
+const DBusIface = `<node>
+  <interface name="org.freedesktop.DBus">
+    <method name="ListNames">
+      <arg type="as" direction="out"/>
+    </method>
+  </interface>
+</node>`;
+
+const DBusProxyClass = Gio.DBusProxy.makeProxyWrapper(DBusIface);
+
+export class MusicWidget extends BaseWidget {
     constructor(settings) {
         super(settings);
         this.type = 'music';
 
         this._player = null;
-        this._playbackStatus = '';
+        this._currentPlayerBusName = null;
+        this._playbackStatus = 'Stopped';
         this._metadata = {};
 
         this._albumArt = new St.Icon({
@@ -54,70 +75,119 @@ const MusicWidget = class MusicWidget extends BaseWidget {
         this._controlsBox.add_child(this._nextButton);
         this.actor.add_child(this._controlsBox);
 
-        this._initDBus();
-        this._updateDisplay();
+        this._prevButton.connect('clicked', () => this._previousTrack());
+        this._playButton.connect('clicked', () => this._playPause());
+        this._nextButton.connect('clicked', () => this._nextTrack());
 
-        // Button clicks
-        this._prevButton.connect('clicked', Lang.bind(this, this._previousTrack));
-        this._playButton.connect('clicked', Lang.bind(this, this._playPause));
-        this._nextButton.connect('clicked', Lang.bind(this, this._nextTrack));
+        this._initDBus();
     }
 
     _initDBus() {
-        Gio.DBusProxy.make_proxy_wrapper({
-            interface: 'org.mpris.MediaPlayer2.Player',
-            properties: ['PlaybackStatus', 'Metadata'],
-            methods: ['PlayPause', 'Previous', 'Next', 'Stop']
-        })(this, (proxy, error) => {
-            if (error) {
-                log('Failed to connect to MPRIS: ' + error);
-                return;
+        // Find active players and subscribe to changes
+        this._dbus = new DBusProxyClass(Gio.DBus.session, 'org.freedesktop.DBus', '/org/freedesktop/DBus');
+        
+        this._findActivePlayer();
+
+        this._ownerChangedId = Gio.DBus.session.signal_subscribe(
+            'org.freedesktop.DBus',
+            'org.freedesktop.DBus',
+            'NameOwnerChanged',
+            '/org/freedesktop/DBus',
+            null,
+            Gio.DBusSignalFlags.NONE,
+            (connection, sender, path, iface, signal, parameters) => {
+                let [name, oldOwner, newOwner] = parameters.deep_unpack();
+                if (name.startsWith('org.mpris.MediaPlayer2.')) {
+                    if (newOwner && !oldOwner) {
+                        if (!this._currentPlayerBusName) {
+                            this._connectToPlayer(name);
+                        }
+                    } else if (!newOwner && oldOwner) {
+                        if (this._currentPlayerBusName === name) {
+                            this._disconnectPlayer();
+                            this._findActivePlayer();
+                        }
+                    }
+                }
             }
-            this._player = proxy;
-            this._player.connect('g-properties-changed', Lang.bind(this, this._onPropertiesChanged));
-            this._player.connect('g-signal', Lang.bind(this, this._onSignal));
-            this._fetchInitial();
-        }, 'org.mpris.MediaPlayer2.', '/org/mpris/MediaPlayer2');
+        );
     }
 
-    _fetchInitial() {
-        if (!this._player) return;
-        this._player.GetAll('org.mpris.MediaPlayer2.Player', null, Lang.bind(this, (proxy, result, error) => {
-            if (error) {
-                log('Failed to get initial MPRIS properties: ' + error);
+    _findActivePlayer() {
+        this._dbus.ListNamesRemote((names, error) => {
+            if (error || !names) {
                 return;
             }
-            let [properties] = result;
-            this._onPropertiesChanged(properties, [], [];
-        }));
-    }
-
-    _onPropertiesChanged(interfaceName, changedProperties, invalidatedProperties) {
-        if (interfaceName !== 'org.mpris.MediaPlayer2.Player') return;
-        for (let [name, value] of changedProperties) {
-            if (name === 'PlaybackStatus') {
-                this._playbackStatus = value.get_string();
-                this._updatePlayButton();
-            } else if (name === 'Metadata') {
-                this._metadata = this._parseMetadata(value);
+            let players = names[0].filter(name => name.startsWith('org.mpris.MediaPlayer2.'));
+            if (players.length > 0) {
+                this._connectToPlayer(players[0]);
+            } else {
                 this._updateDisplay();
             }
+        });
+    }
+
+    _connectToPlayer(busName) {
+        this._disconnectPlayer();
+        this._currentPlayerBusName = busName;
+
+        try {
+            this._player = new MprisPlayerProxy(
+                Gio.DBus.session,
+                busName,
+                '/org/mpris/MediaPlayer2'
+            );
+
+            this._propertiesChangedId = this._player.connect('g-properties-changed', (proxy, changed, invalidated) => {
+                let unpacked = changed.deep_unpack();
+                if ('PlaybackStatus' in unpacked) {
+                    this._playbackStatus = unpacked.PlaybackStatus.deep_unpack();
+                    this._updatePlayButton();
+                }
+                if ('Metadata' in unpacked) {
+                    this._metadata = this._parseMetadata(unpacked.Metadata);
+                    this._updateDisplay();
+                }
+            });
+
+            // Get initial values if available
+            let status = this._player.PlaybackStatus;
+            if (status) {
+                this._playbackStatus = typeof status.deep_unpack === 'function' ? status.deep_unpack() : status;
+            }
+            if (this._player.Metadata) {
+                this._metadata = this._parseMetadata(new Gio.Variant('a{sv}', this._player.Metadata));
+            }
+            this._updatePlayButton();
+            this._updateDisplay();
+        } catch (e) {
+            console.error('Failed to connect to MPRIS player: ' + e);
         }
     }
 
-    _onSignal(proxy, senderName, signalName, parameters) {
-        if (signalName === 'Seeked') {
-            // We don't need to update display for seek
+    _disconnectPlayer() {
+        if (this._player) {
+            if (this._propertiesChangedId) {
+                this._player.disconnect(this._propertiesChangedId);
+                this._propertiesChangedId = null;
+            }
+            this._player = null;
         }
+        this._currentPlayerBusName = null;
+        this._playbackStatus = 'Stopped';
+        this._metadata = {};
+        this._updatePlayButton();
+        this._updateDisplay();
     }
 
     _parseMetadata(metadataVariant) {
+        if (!metadataVariant) return {};
         let metadata = metadataVariant.deep_unpack();
         let result = {};
         if ('xesam:title' in metadata) {
             result.title = metadata['xesam:title'];
         }
-        if ('xesam:artist' in metadata && metadata['xesam:artist'].length > 0) {
+        if ('xesam:artist' in metadata && Array.isArray(metadata['xesam:artist']) && metadata['xesam:artist'].length > 0) {
             result.artist = metadata['xesam:artist'][0];
         }
         if ('mpris:artUrl' in metadata) {
@@ -127,53 +197,47 @@ const MusicWidget = class MusicWidget extends BaseWidget {
     }
 
     _updateDisplay() {
-        if (this._metadata.title) {
+        if (this._metadata && this._metadata.title) {
             this._trackLabel.set_text(this._metadata.title);
         } else {
             this._trackLabel.set_text('No track playing');
         }
-        if (this._metadata.artist) {
+        if (this._metadata && this._metadata.artist) {
             this._artistLabel.set_text(this._metadata.artist);
         } else {
             this._artistLabel.set_text('');
         }
-        // TODO: Update album art from artUrl
     }
 
     _updatePlayButton() {
-        if (this._playbackStatus === 'Playing') {
-            this._playButton.set_child(new St.Icon({ icon_name: 'media-playback-pause-symbolic', style_class: 'widgy-widget-icon' }));
-        } else {
-            this._playButton.set_child(new St.Icon({ icon_name: 'media-playback-start-symbolic', style_class: 'widgy-widget-icon' }));
-        }
+        let iconName = this._playbackStatus === 'Playing' ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
+        this._playButton.set_child(new St.Icon({ icon_name: iconName, style_class: 'widgy-widget-icon' }));
     }
 
     _previousTrack() {
         if (this._player) {
-            this._player.Previous();
+            this._player.PreviousRemote(() => {});
         }
     }
 
     _playPause() {
         if (this._player) {
-            this._player.PlayPause();
+            this._player.PlayPauseRemote(() => {});
         }
     }
 
     _nextTrack() {
         if (this._player) {
-            this._player.Next();
+            this._player.NextRemote(() => {});
         }
     }
 
     destroy() {
-        if (this._player) {
-            this._player.$destroy();
+        this._disconnectPlayer();
+        if (this._ownerChangedId) {
+            Gio.DBus.session.signal_unsubscribe(this._ownerChangedId);
+            this._ownerChangedId = null;
         }
         super.destroy();
     }
-};
-
-if (typeof module !== 'undefined') {
-    module.exports = MusicWidget;
 }

@@ -1,117 +1,75 @@
-const St = imports.gi.St;
-const Clutter = imports.gi.Clutter;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Main = imports.ui.main;
-const PopupMenu = imports.ui.popupMenu;
-const Lang = imports.lang;
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
+import Gio from 'gi://Gio';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+// Import widgets relative to extension.js
+import { ClockWidget } from './widgets/clock.js';
+import { CalendarWidget } from './widgets/calendar.js';
+import { MusicWidget } from './widgets/music.js';
+import { ControlWidget } from './widgets/control.js';
+import { WeatherWidget } from './widgets/weather.js';
 
-// Helper to import a widget from the widgets directory
-function importWidget(name) {
-    let path = Me.dir.get_child('widgets').get_child(name + '.js');
-    let imports = new imports;
-    try {
-        return imports.importWidget(path.get_path());
-    } catch (e) {
-        logError(`Failed to import widget ${name}: ${e}`);
-        return null;
-    }
-}
+export default class WidgyExtension extends Extension {
+    enable() {
+        this._settings = this.getSettings();
+        this._widgetManager = new WidgetManager(this._settings);
+        this._widgetManager.loadPositions();
 
-let widgetManager = null;
-
-function init() {
-    // Import widget classes
-    const ClockWidget = importWidget('clock');
-    const CalendarWidget = importWidget('calendar');
-    const MusicWidget = importWidget('music');
-    const ControlWidget = importWidget('control');
-    const WeatherWidget = importWidget('weather');
-
-    // Make them available globally for the extension
-    global.ClockWidget = ClockWidget;
-    global.CalendarWidget = CalendarWidget;
-    global.MusicWidget = MusicWidget;
-    global.ControlWidget = ControlWidget;
-    global.WeatherWidget = WeatherWidget;
-}
-
-function enable() {
-    widgetManager = new WidgetManager();
-    widgetManager.loadPositions();
-
-    // If no widgets are saved, create some defaults for demonstration
-    if (widgetManager.widgets.length === 0) {
-        widgetManager.createWidget('clock', 100, 100);
-        widgetManager.createWidget('calendar', 300, 100);
-        widgetManager.createWidget('music', 100, 300);
-        widgetManager.createWidget('control', 300, 300);
-        widgetManager.createWidget('weather', 500, 200);
-        widgetManager.savePositions();
+        // If no widgets are saved, create some defaults for demonstration
+        if (this._widgetManager.widgets.length === 0) {
+            this._widgetManager.createWidget('clock', 100, 100);
+            this._widgetManager.createWidget('calendar', 300, 100);
+            this._widgetManager.createWidget('music', 100, 300);
+            this._widgetManager.createWidget('control', 300, 300);
+            this._widgetManager.createWidget('weather', 500, 200);
+            this._widgetManager.savePositions();
+        }
     }
 
-    // Listen for settings changes
-    widgetManager.settings.connect('changed::widget-snap-grid', () => {
-        // Update existing widgets? The snap grid is used during drag, so no need to update existing positions.
-    });
-}
-
-function disable() {
-    if (widgetManager) {
-        widgetManager.savePositions();
-        widgetManager = null;
+    disable() {
+        if (this._widgetManager) {
+            this._widgetManager.savePositions();
+            this._widgetManager.destroy();
+            this._widgetManager = null;
+        }
+        this._settings = null;
     }
 }
 
 class WidgetManager {
-    constructor() {
+    constructor(settings) {
         this.widgets = [];
-        this.settings = null;
-        this._initSettings();
-    }
-
-    _initSettings() {
-        let schemaSource = Gio.SettingsSchemaSource.new_from_directory(
-            Me.dir.get_child('schemas').get_path(),
-            Gio.SettingsSchemaSource.get_default(),
-            false
-        );
-        let schema = schemaSource.lookup('org.gnome.shell.extensions.widgy', true);
-        if (!schema) {
-            throw new Error('Schema org.gnome.shell.extensions.widgy not found');
-        }
-        this.settings = new Gio.Settings({ settings_schema: schema });
+        this.settings = settings;
     }
 
     createWidget(type, x, y) {
         let WidgetClass;
         switch (type) {
             case 'clock':
-                WidgetClass = global.ClockWidget;
+                WidgetClass = ClockWidget;
                 break;
             case 'calendar':
-                WidgetClass = global.CalendarWidget;
+                WidgetClass = CalendarWidget;
                 break;
             case 'music':
-                WidgetClass = global.MusicWidget;
+                WidgetClass = MusicWidget;
                 break;
             case 'control':
-                WidgetClass = global.ControlWidget;
+                WidgetClass = ControlWidget;
                 break;
             case 'weather':
-                WidgetClass = global.WeatherWidget;
+                WidgetClass = WeatherWidget;
                 break;
             default:
                 throw new Error(`Unknown widget type: ${type}`);
         }
-        if (!WidgetClass) {
-            throw new Error(`Widget class for ${type} not found`);
-        }
+        
         let widget = new WidgetClass(this.settings);
         widget.setPosition(x, y);
+        widget.onRemove = (w) => this.removeWidget(w);
         this.widgets.push(widget);
         Main.uiGroup.add_actor(widget.actor);
         return widget;
@@ -122,6 +80,7 @@ class WidgetManager {
         if (index !== -1) {
             this.widgets.splice(index, 1);
             widget.destroy();
+            this.savePositions();
         }
     }
 
@@ -135,7 +94,9 @@ class WidgetManager {
                 y: y
             });
         }
-        this.settings.set_value('widget-positions', new Gio.Variant('aa(ii)', positions.map(p => [p.type, p.x, p.y])));
+        // Save using GSettings (type: a(sii))
+        let variant = new Gio.Variant('a(sii)', positions.map(p => [p.type, p.x, p.y]));
+        this.settings.set_value('widget-positions', variant);
     }
 
     loadPositions() {
@@ -144,5 +105,12 @@ class WidgetManager {
             let [type, x, y] = pos;
             this.createWidget(type, x, y);
         }
+    }
+
+    destroy() {
+        for (let widget of this.widgets) {
+            widget.destroy();
+        }
+        this.widgets = [];
     }
 }
