@@ -7,14 +7,17 @@ import Soup from 'gi://Soup?version=3.0';
 import { BaseWidget } from './base.js';
 
 export class WeatherWidget extends BaseWidget {
-    constructor(settings) {
-        super(settings);
+    constructor(settings, widgetManager) {
+        super(settings, widgetManager);
         this.type = 'weather';
 
         this._location = settings.get_string('weather-location') || 'auto';
         this._temperature = null;
         this._condition = '';
         this._iconName = 'weather-clear-symbolic';
+        this._session = new Soup.Session();
+        this._pendingRequest = null;
+        this._decoder = new TextDecoder('utf-8');
 
         this._icon = new St.Icon({
             style_class: 'widgy-widget-weather-icon',
@@ -35,7 +38,6 @@ export class WeatherWidget extends BaseWidget {
         this.actor.add_child(this._conditionLabel);
 
         this._updateWeather();
-        // Update weather every 30 minutes
         this._weatherId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1800, () => {
             this._updateWeather();
             return GLib.SOURCE_CONTINUE;
@@ -44,7 +46,7 @@ export class WeatherWidget extends BaseWidget {
 
     _updateWeather() {
         if (this._location === 'auto') {
-            this._fetchWeather(40.7128, -74.0060); // Default: New York
+            this._fetchWeather(40.7128, -74.0060);
         } else {
             let parts = this._location.split(',').map(s => parseFloat(s.trim()));
             if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
@@ -56,15 +58,19 @@ export class WeatherWidget extends BaseWidget {
     }
 
     _fetchWeather(lat, lon) {
+        if (this._pendingRequest) {
+            return;
+        }
+
         let url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius&windspeed_unit=kmh&precipitation_unit=mm`;
-        let session = new Soup.Session();
         let message = Soup.Message.new('GET', url);
+        this._pendingRequest = message;
         
-        session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
+        this._session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
+            this._pendingRequest = null;
             try {
                 let bytes = session.send_and_read_finish(result);
-                let decoder = new TextDecoder('utf-8');
-                let responseText = decoder.decode(bytes.toArray());
+                let responseText = this._decoder.decode(bytes.toArray());
                 let data = JSON.parse(responseText);
                 this._processWeatherData(data);
             } catch (e) {
@@ -117,6 +123,15 @@ export class WeatherWidget extends BaseWidget {
             GLib.source_remove(this._weatherId);
             this._weatherId = null;
         }
+        if (this._pendingRequest) {
+            this._session.cancel_message(this._pendingRequest);
+            this._pendingRequest = null;
+        }
+        if (this._session) {
+            this._session.close();
+            this._session = null;
+        }
+        this._decoder = null;
         super.destroy();
     }
 }

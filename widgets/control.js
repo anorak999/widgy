@@ -5,8 +5,8 @@ import Gio from 'gi://Gio';
 import { BaseWidget } from './base.js';
 
 export class ControlWidget extends BaseWidget {
-    constructor(settings) {
-        super(settings);
+    constructor(settings, widgetManager) {
+        super(settings, widgetManager);
         this.type = 'control';
 
         this.actor.orientation = Clutter.Orientation.VERTICAL;
@@ -85,5 +85,10 @@ export class ControlWidget extends BaseWidget {
                 button.remove_style_class_name('active');
             }
         }
+    }
+
+    destroy() {
+        this._settingsCache.clear();
+        super.destroy();
     }
 }

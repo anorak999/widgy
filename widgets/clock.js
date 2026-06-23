@@ -5,8 +5,8 @@ import GLib from 'gi://GLib';
 import { BaseWidget } from './base.js';
 
 export class ClockWidget extends BaseWidget {
-    constructor(settings) {
-        super(settings);
+    constructor(settings, widgetManager) {
+        super(settings, widgetManager);
         this.type = 'clock';
 
         this._timeLabel = new St.Label({

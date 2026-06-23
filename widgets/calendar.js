@@ -5,8 +5,8 @@ import GLib from 'gi://GLib';
 import { BaseWidget } from './base.js';
 
 export class CalendarWidget extends BaseWidget {
-    constructor(settings) {
-        super(settings);
+    constructor(settings, widgetManager) {
+        super(settings, widgetManager);
         this.type = 'calendar';
 
         this._dateLabel = new St.Label({

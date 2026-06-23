@@ -29,8 +29,8 @@ const DBusIface = `<node>
 const DBusProxyClass = Gio.DBusProxy.makeProxyWrapper(DBusIface);
 
 export class MusicWidget extends BaseWidget {
-    constructor(settings) {
-        super(settings);
+    constructor(settings, widgetManager) {
+        super(settings, widgetManager);
         this.type = 'music';
 
         this._player = null;
@@ -239,6 +239,7 @@ export class MusicWidget extends BaseWidget {
             Gio.DBus.session.signal_unsubscribe(this._ownerChangedId);
             this._ownerChangedId = null;
         }
+        this._dbus = null;
         super.destroy();
     }
 }

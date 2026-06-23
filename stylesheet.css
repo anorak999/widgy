@@ -3,12 +3,13 @@
 /* Base widget container */
 .widgy-widget {
     background-color: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(10px);
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
     padding: 16px;
     transition: all 0.3s ease;
+    will-change: transform, opacity;
 }
 
 /* Slightly different appearance when active (desktop focused) */
@@ -203,4 +204,14 @@
 
 .widgy-widget {
     animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Performance mode - disable expensive backdrop-filter */
+.widgy-widget.no-blur {
+    backdrop-filter: none;
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.widgy-widget.no-blur.light-theme {
+    background-color: rgba(0, 0, 0, 0.15);
 }
