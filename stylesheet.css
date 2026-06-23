@@ -1,217 +1,792 @@
-/* Widgy Extension Stylesheet */
+/* ═══════════════════════════════════════════════════════════════
+   Widgy — macOS Sonoma Widget Design Tokens
+   Based on: Apple HIG, WWDC20 "Design Great Widgets"
+   All values in POINTS (pt). GNOME scale factor ×1 = 1:1 mapping.
+   ═══════════════════════════════════════════════════════════════ */
 
-/* Base widget container */
+/* ─── COLOR TOKENS ───────────────────────────────────────────── */
+/* Semantic colors — adapt to light/dark automatically */
+/* Default = dark mode (macOS desktop widget default) */
+
+/*
+  System Blue:    #0A84FF  (interactive, active)
+  System Green:   #30D158  (success, on)
+  System Red:     #FF453A  (destructive, error)
+  System Orange:  #FF9F0A  (warning)
+  System Teal:    #64D2FF  (communication, status)
+  System Gray:    #8E8E93  (disabled, placeholder)
+  Gray 2-6:       #636366 → #1C1C1E  (surfaces)
+  Label:          #FFFFFF  (primary text)
+  Secondary:      rgba(235, 235, 245, 0.6)
+  Tertiary:       rgba(235, 235, 245, 0.3)
+  Quaternary:     rgba(235, 235, 245, 0.18)
+  Separator:      rgba(84, 84, 88, 0.65)
+  System BG:      #1C1C1E
+  Secondary BG:   #2C2C2E
+  Tertiary BG:    #3A3A3C
+  Widget BG:      rgba(44, 44, 46, 0.72) + blur(30px)
+  Fill:           rgba(120, 120, 131, 0.36)
+*/
+
+/* ─── WIDGET SIZES (macOS Sonoma WidgetKit) ──────────────────── */
+/*
+  Small:     170 × 170 pt  (2×2 grid)
+  Medium:    329 × 155 pt  (4×2 grid)
+  Large:     329 × 345 pt  (4×4 grid)
+  ExtraLg:   715 × 345 pt  (8×4 grid, desktop only)
+*/
+
+/* ─── CORNER RADIUS ──────────────────────────────────────────── */
+/*
+  Widget container: 20pt (continuous curvature squircle)
+  Inner elements:   20pt − distance_from_edge
+  Small cards:      12pt
+  Buttons/circles:  50% (pill / circle)
+*/
+
+/* ─── SPACING GRID ───────────────────────────────────────────── */
+/*
+  Base unit:  8pt
+  Subdiv:     4pt
+  Values: 4, 8, 12, 16, 20, 24, 28, 32...
+  Safe margin: 16pt (text/data) / 11pt (graphical)
+*/
+
+/* ─── TYPOGRAPHY (SF Pro scale) ──────────────────────────────── */
+/*
+  Large Title:  26pt  Regular/Bold
+  Title 1:      22pt  Regular
+  Title 2:      17pt  Regular
+  Title 3:      15pt  Regular
+  Headline:     13pt  Semibold
+  Body:         13pt  Regular
+  Callout:      12pt  Regular
+  Subheadline:  11pt  Regular
+  Footnote:     10pt  Regular
+  Caption 1:    10pt  Regular
+  Caption 2:    10pt  Medium
+  Min size:     10pt (never go below)
+*/
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   1. WIDGET CONTAINER
+   ═══════════════════════════════════════════════════════════════ */
+
 .widgy-widget {
-    background-color: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
+    background-color: rgba(44, 44, 46, 0.72);
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    border: none;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35),
+                0 1px 4px rgba(0, 0, 0, 0.16);
     padding: 16px;
-    transition: all 0.3s ease;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Cantarell', 'Helvetica Neue', Arial, sans-serif;
+    transition: opacity 0.3s ease, transform 0.3s ease;
     will-change: transform, opacity;
 }
 
-/* Slightly different appearance when active (desktop focused) */
 .widgy-widget:active,
 .widgy-widget:focus {
-    background-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.25);
+    background-color: rgba(58, 58, 60, 0.82);
 }
 
-/* Widget labels */
-.widgy-widget-label {
-    font-size: 1.2em;
-    font-weight: 600;
+/* Performance: no-blur fallback */
+.widgy-widget.no-blur {
+    background-color: rgba(44, 44, 46, 0.92);
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   2. WIDGET SIZE CLASSES (macOS Sonoma WidgetKit)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Small: 170×170 pt — 2×2 grid — clock, weather, single metric */
+.widgy-widget.size-small {
+    width: 170px;
+    height: 170px;
+}
+
+/* Medium: 329×155 pt — 4×2 grid — music, controls, two-column */
+.widgy-widget.size-medium {
+    width: 329px;
+    height: 155px;
+}
+
+/* Large: 329×345 pt — 4×4 grid — calendar, lists, detailed content */
+.widgy-widget.size-large {
+    width: 329px;
+    height: 345px;
+}
+
+/* Extra Large: 715×345 pt — 8×4 grid — dashboard, maps */
+.widgy-widget.size-extra-large {
+    width: 715px;
+    height: 345px;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   3. TYPOGRAPHY — SF Pro Scale
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Large Title: 26pt — hero numbers, primary metric, date header */
+.widgy-type-large-title {
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: 0.37px;
+    line-height: 32px;
     color: #ffffff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-/* Secondary text */
-.widgy-widget-label.dim {
-    opacity: 0.8;
-}
-
-/* Clock specific */
-.widgy-widget .clock-hand {
-    /* Will be styled in JS if we implement analog clock */
-}
-
-/* Calendar events */
-.widgy-widget-event {
-    font-size: 0.9em;
-    color: rgba(255, 255, 255, 0.8);
-    margin: 4px 0;
-}
-
-/* Music widget */
-.widgy-widget-album-art {
-    icon-size: 64px;
-    border-radius: 12px;
-}
-
-.widgy-widget-track {
-    font-size: 1.1em;
-    font-weight: 600;
+/* Title 1: 22pt — section title, prominent label */
+.widgy-type-title-1 {
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: 0.35px;
+    line-height: 26px;
     color: #ffffff;
 }
 
-.widgy-widget-artist {
-    font-size: 0.9em;
-    color: rgba(255, 255, 255, 0.8);
+/* Title 2: 17pt — secondary title, group header */
+.widgy-type-title-2 {
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.43px;
+    line-height: 22px;
+    color: #ffffff;
 }
 
-.widgy-widget-button {
-    background-color: transparent;
+/* Title 3: 15pt — sub-section title */
+.widgy-type-title-3 {
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: -0.23px;
+    line-height: 20px;
+    color: #ffffff;
+}
+
+/* Headline: 13pt Semibold — row label, category label */
+.widgy-type-headline {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.08px;
+    line-height: 16px;
+    color: #ffffff;
+}
+
+/* Body: 13pt Regular — default body copy, list item text */
+.widgy-type-body {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: -0.08px;
+    line-height: 18px;
+    color: #ffffff;
+}
+
+/* Callout: 12pt — secondary body, descriptions */
+.widgy-type-callout {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0px;
+    line-height: 15px;
+    color: rgba(235, 235, 245, 0.6);
+}
+
+/* Subheadline: 11pt — labels, supplemental info */
+.widgy-type-subheadline {
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.06px;
+    line-height: 14px;
+    color: rgba(235, 235, 245, 0.6);
+}
+
+/* Footnote: 10pt — timestamps, metadata, fine print */
+.widgy-type-footnote {
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.12px;
+    line-height: 13px;
+    color: rgba(235, 235, 245, 0.3);
+}
+
+/* Caption 1: 10pt — icon labels, chart labels, badge text */
+.widgy-type-caption-1 {
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0px;
+    line-height: 13px;
+    color: rgba(235, 235, 245, 0.3);
+}
+
+/* Caption 2: 10pt Medium — badge counts, unit labels (smallest) */
+.widgy-type-caption-2 {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06px;
+    line-height: 13px;
+    color: rgba(235, 235, 245, 0.3);
+}
+
+/* Label — primary text, highest contrast */
+.widgy-text-primary {
+    color: #ffffff;
+}
+
+/* Secondary label — subtitles, supporting text */
+.widgy-text-secondary {
+    color: rgba(235, 235, 245, 0.6);
+}
+
+/* Tertiary label — placeholders, hints */
+.widgy-text-tertiary {
+    color: rgba(235, 235, 245, 0.3);
+}
+
+/* Quaternary label — decorative only */
+.widgy-text-quaternary {
+    color: rgba(235, 235, 245, 0.18);
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   4. SEPARATORS
+   ═══════════════════════════════════════════════════════════════ */
+
+.widgy-separator {
+    background-color: rgba(84, 84, 88, 0.65);
+    min-height: 0.5px;
+    margin: 8px 0;
+}
+
+.widgy-separator-horizontal {
+    min-width: 0.5px;
+    min-height: 100%;
+    margin: 0 8px;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   5. SYSTEM ACCENT COLORS
+   ═══════════════════════════════════════════════════════════════ */
+
+.widgy-accent-blue    { color: #0A84FF; }
+.widgy-accent-green   { color: #30D158; }
+.widgy-accent-red     { color: #FF453A; }
+.widgy-accent-orange  { color: #FF9F0A; }
+.widgy-accent-teal    { color: #64D2FF; }
+.widgy-accent-purple  { color: #BF5AF2; }
+.widgy-accent-pink    { color: #FF375F; }
+.widgy-accent-indigo  { color: #5E5CE6; }
+.widgy-accent-yellow  { color: #FFD60A; }
+.widgy-accent-mint    { color: #63E6E2; }
+.widgy-accent-gray    { color: #8E8E93; }
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   6. CONTROL CENTER TOGGLES (macOS Quick Settings style)
+   ═══════════════════════════════════════════════════════════════ */
+
+.widgy-toggle {
+    background-color: rgba(120, 120, 131, 0.36);
     border-radius: 12px;
-    padding: 8px;
-    transition: background-color 0.2s;
+    padding: 10px;
+    min-width: 44px;
+    min-height: 44px;
+    transition: background-color 0.2s ease;
 }
 
-.widgy-widget-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+.widgy-toggle:hover {
+    background-color: rgba(120, 120, 131, 0.46);
 }
 
-.widgy-widget-button:active {
-    background-color: rgba(255, 255, 255, 0.2);
+.widgy-toggle:active {
+    background-color: rgba(120, 120, 131, 0.56);
 }
 
-.widgy-widget-icon {
+/* Active toggle — system blue accent */
+.widgy-toggle.active {
+    background-color: rgba(10, 132, 255, 0.5);
+}
+
+.widgy-toggle.active .widgy-toggle-icon {
+    color: #ffffff;
+}
+
+/* Toggle icon — 20pt (SF Symbol body scale) */
+.widgy-toggle-icon {
     icon-size: 20px;
-    color: #ffffff;
+    color: rgba(235, 235, 245, 0.8);
 }
 
-/* Control widget */
-.widgy-widget-control-button {
-    background-color: transparent;
+/* Toggle label under icon */
+.widgy-toggle-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06px;
+    line-height: 13px;
+    color: rgba(235, 235, 245, 0.8);
+    margin-top: 4px;
+}
+
+/* Large toggle — 56×56 for control center hero */
+.widgy-toggle-large {
+    background-color: rgba(120, 120, 131, 0.36);
     border-radius: 16px;
     padding: 12px;
-    transition: background-color 0.2s;
+    min-width: 56px;
+    min-height: 56px;
 }
 
-.widgy-widget-control-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+.widgy-toggle-large.active {
+    background-color: rgba(10, 132, 255, 0.5);
 }
 
-.widgy-widget-control-button:active {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-.widgy-widget-control-button.active {
-    background-color: rgba(0, 120, 215, 0.3); /* Blue accent */
-}
-
-.widgy-widget-control-icon {
+.widgy-toggle-large .widgy-toggle-icon {
     icon-size: 24px;
+}
+
+/* Toggle grid — 2×2 layout like macOS control center */
+.widgy-toggle-grid {
+    spacing: 8px;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   7. MUSIC PLAYER (macOS Now Playing widget style)
+   ═══════════════════════════════════════════════════════════════ */
+
+.widgy-music-art {
+    icon-size: 64px;
+    border-radius: 8px;
+}
+
+.widgy-music-art-large {
+    icon-size: 120px;
+    border-radius: 12px;
+}
+
+.widgy-music-track {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.23px;
+    line-height: 20px;
     color: #ffffff;
 }
 
-/* Weather widget */
-.widgy-widget-weather-icon {
+.widgy-music-artist {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0px;
+    line-height: 15px;
+    color: rgba(235, 235, 245, 0.6);
+}
+
+.widgy-music-controls {
+    spacing: 12px;
+}
+
+.widgy-music-btn {
+    background-color: rgba(120, 120, 131, 0.36);
+    border-radius: 50%;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.widgy-music-btn:hover {
+    background-color: rgba(120, 120, 131, 0.46);
+}
+
+.widgy-music-btn:active {
+    background-color: rgba(120, 120, 131, 0.56);
+}
+
+.widgy-music-btn-play {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.widgy-music-btn .widgy-toggle-icon {
+    icon-size: 18px;
+    color: #ffffff;
+}
+
+/* Progress bar */
+.widgy-music-progress {
+    min-height: 3px;
+    min-width: 100%;
+    background-color: rgba(120, 120, 131, 0.36);
+    border-radius: 1.5px;
+}
+
+.widgy-music-progress-fill {
+    min-height: 3px;
+    background-color: #ffffff;
+    border-radius: 1.5px;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   8. CLOCK WIDGET
+   ═══════════════════════════════════════════════════════════════ */
+
+.widgy-clock-time {
+    font-size: 48px;
+    font-weight: 200;
+    letter-spacing: -1px;
+    line-height: 52px;
+    color: #ffffff;
+}
+
+.widgy-clock-date {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: -0.08px;
+    line-height: 16px;
+    color: rgba(235, 235, 245, 0.6);
+}
+
+.widgy-clock-day {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06px;
+    line-height: 14px;
+    color: rgba(235, 235, 245, 0.3);
+    text-transform: uppercase;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   9. WEATHER WIDGET
+   ═══════════════════════════════════════════════════════════════ */
+
+.widgy-weather-icon {
     icon-size: 48px;
 }
 
-.widgy-widget-temperature {
-    font-size: 2.5em;
-    font-weight: 300;
+.widgy-weather-icon-large {
+    icon-size: 56px;
+}
+
+.widgy-weather-temp {
+    font-size: 34px;
+    font-weight: 200;
+    letter-spacing: -0.5px;
+    line-height: 38px;
     color: #ffffff;
 }
 
-.widgy-widget-condition {
-    font-size: 1.1em;
-    color: rgba(255, 255, 255, 0.8);
+.widgy-weather-condition {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0px;
+    line-height: 15px;
+    color: rgba(235, 235, 245, 0.6);
 }
 
-/* General text adjustments for dark/light themes */
-/* These will be overridden by theme-specific styles if needed */
+.widgy-weather-location {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06px;
+    line-height: 13px;
+    color: rgba(235, 235, 245, 0.3);
+    text-transform: uppercase;
+}
 
-/* Light theme adjustments */
+.widgy-weather-hi-lo {
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.06px;
+    line-height: 14px;
+    color: rgba(235, 235, 245, 0.6);
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   10. CALENDAR WIDGET
+   ═══════════════════════════════════════════════════════════════ */
+
+.widgy-calendar-header {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.08px;
+    line-height: 16px;
+    color: #ffffff;
+    padding: 4px 0;
+}
+
+.widgy-calendar-event {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0px;
+    line-height: 15px;
+    color: rgba(235, 235, 245, 0.6);
+    padding: 6px 8px;
+    margin: 2px 0;
+    border-radius: 8px;
+    background-color: rgba(120, 120, 131, 0.2);
+}
+
+.widgy-calendar-event-time {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06px;
+    line-height: 13px;
+    color: #0A84FF;
+    margin-right: 6px;
+}
+
+.widgy-calendar-today {
+    color: #0A84FF;
+    font-weight: 600;
+}
+
+.widgy-calendar-day-header {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06px;
+    line-height: 13px;
+    color: rgba(235, 235, 245, 0.3);
+    text-transform: uppercase;
+}
+
+.widgy-calendar-day {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: -0.08px;
+    line-height: 18px;
+    color: rgba(235, 235, 245, 0.8);
+    min-width: 24px;
+    min-height: 24px;
+    border-radius: 12px;
+}
+
+.widgy-calendar-day.other-month {
+    color: rgba(235, 235, 245, 0.18);
+}
+
+.widgy-calendar-day.today {
+    background-color: #0A84FF;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   11. LIGHT MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
 .widgy-widget.light-theme {
-    background-color: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.1);
-}
-
-.widgy-widget.light-theme .widgy-widget-label {
+    background-color: rgba(255, 255, 255, 0.72);
     color: #000000;
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12),
+                0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
-.widgy-widget.light-theme .widgy-widget-label.dim {
-    opacity: 0.6;
+.widgy-widget.light-theme:active,
+.widgy-widget.light-theme:focus {
+    background-color: rgba(255, 255, 255, 0.82);
 }
 
-.widgy-widget.light-theme .widgy-widget-event {
-    color: rgba(0, 0, 0, 0.6);
+.widgy-widget.light-theme.no-blur {
+    background-color: rgba(255, 255, 255, 0.92);
 }
 
-.widgy-widget.light-theme .widgy-widget-track {
-    color: #000000;
-}
-
-.widgy-widget.light-theme .widgy-widget-artist {
-    color: rgba(0, 0, 0, 0.6);
-}
-
-.widgy-widget.light-theme .widgy-widget-button:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-.widgy-widget.light-theme .widgy-widget-button:active {
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-.widgy-widget.light-theme .widgy-widget-icon {
+/* Light mode text */
+.widgy-widget.light-theme .widgy-type-large-title,
+.widgy-widget.light-theme .widgy-type-title-1,
+.widgy-widget.light-theme .widgy-type-title-2,
+.widgy-widget.light-theme .widgy-type-title-3,
+.widgy-widget.light-theme .widgy-type-headline,
+.widgy-widget.light-theme .widgy-type-body,
+.widgy-widget.light-theme .widgy-text-primary,
+.widgy-widget.light-theme .widgy-clock-time,
+.widgy-widget.light-theme .widgy-clock-date,
+.widgy-widget.light-theme .widgy-music-track,
+.widgy-widget.light-theme .widgy-weather-temp,
+.widgy-widget.light-theme .widgy-calendar-header,
+.widgy-widget.light-theme .widgy-calendar-day {
     color: #000000;
 }
 
-.widgy-widget.light-theme .widgy-widget-control-icon {
+.widgy-widget.light-theme .widgy-type-callout,
+.widgy-widget.light-theme .widgy-type-subheadline,
+.widgy-widget.light-theme .widgy-text-secondary,
+.widgy-widget.light-theme .widgy-music-artist,
+.widgy-widget.light-theme .widgy-weather-condition,
+.widgy-widget.light-theme .widgy-weather-hi-lo,
+.widgy-widget.light-theme .widgy-clock-day,
+.widgy-widget.light-theme .widgy-calendar-day.other-month,
+.widgy-widget.light-theme .widgy-toggle-label {
+    color: rgba(60, 60, 67, 0.6);
+}
+
+.widgy-widget.light-theme .widgy-type-footnote,
+.widgy-widget.light-theme .widgy-type-caption-1,
+.widgy-widget.light-theme .widgy-type-caption-2,
+.widgy-widget.light-theme .widgy-text-tertiary,
+.widgy-widget.light-theme .widgy-text-quaternary,
+.widgy-widget.light-theme .widgy-calendar-day-header,
+.widgy-widget.light-theme .widgy-weather-location {
+    color: rgba(60, 60, 67, 0.3);
+}
+
+/* Light mode toggles */
+.widgy-widget.light-theme .widgy-toggle {
+    background-color: rgba(120, 120, 131, 0.12);
+}
+
+.widgy-widget.light-theme .widgy-toggle.active {
+    background-color: rgba(0, 122, 255, 0.2);
+}
+
+.widgy-widget.light-theme .widgy-toggle-icon {
+    color: rgba(60, 60, 67, 0.6);
+}
+
+.widgy-widget.light-theme .widgy-toggle.active .widgy-toggle-icon {
+    color: #0A84FF;
+}
+
+/* Light mode controls */
+.widgy-widget.light-theme .widgy-music-btn {
+    background-color: rgba(120, 120, 131, 0.12);
+}
+
+.widgy-widget.light-theme .widgy-music-btn .widgy-toggle-icon {
     color: #000000;
 }
 
-.widgy-widget.light-theme .widgy-widget-control-button.active {
-    background-color: rgba(0, 120, 215, 0.2);
+.widgy-widget.light-theme .widgy-music-progress {
+    background-color: rgba(120, 120, 131, 0.12);
 }
 
-/* Dark theme adjustments (default is dark) */
-.widgy-widget.dark-theme {
-    /* Already dark by default */
+/* Light mode separators */
+.widgy-widget.light-theme .widgy-separator {
+    background-color: rgba(198, 198, 200, 0.65);
 }
 
-/* Size classes */
-.widgy-widget.size-small {
-    width: 180px;
-    height: 180px;
+/* Light mode events */
+.widgy-widget.light-theme .widgy-calendar-event {
+    background-color: rgba(120, 120, 131, 0.08);
+    color: rgba(60, 60, 67, 0.6);
 }
 
-.widgy-widget.size-medium {
-    width: 320px;
-    height: 180px;
-    /* For vertical medium, we could have another class */
+.widgy-widget.light-theme .widgy-calendar-event-time {
+    color: #007AFF;
 }
 
-.widgy-widget.size-large {
-    width: 320px;
-    height: 320px;
+.widgy-widget.light-theme .widgy-calendar-day.today {
+    background-color: #007AFF;
+    color: #ffffff;
 }
 
-/* Animation for when widgets are added */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Light mode toggles in system menu */
+.widgy-widget.light-theme .widgy-toggle-large {
+    background-color: rgba(120, 120, 131, 0.12);
+}
+
+.widgy-widget.light-theme .widgy-toggle-large.active {
+    background-color: rgba(0, 122, 255, 0.2);
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   12. ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Transition in: opacity + 8pt vertical offset (WWDC20 spec) */
+@keyframes widgy-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .widgy-widget {
-    animation: fadeIn 0.3s ease-out forwards;
+    animation: widgy-fade-in 0.25s ease-out forwards;
 }
 
-/* Performance mode - disable expensive backdrop-filter */
-.widgy-widget.no-blur {
-    backdrop-filter: none;
-    background-color: rgba(255, 255, 255, 0.25);
+/* Content refresh cross-dissolve */
+@keyframes widgy-cross-dissolve {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
-.widgy-widget.no-blur.light-theme {
-    background-color: rgba(0, 0, 0, 0.15);
+/* Reduced motion */
+.widgy-widget.reduce-motion {
+    animation: none;
+    transition: none;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   13. SYSTEM MENU (Panel integration styles)
+   ═══════════════════════════════════════════════════════════════ */
+
+.widgy-menu-header {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.08px;
+    line-height: 16px;
+    color: #0A84FF;
+    padding: 8px 12px 4px 12px;
+}
+
+.widgy-menu-toggle {
+    background-color: rgba(120, 120, 131, 0.36);
+    border-radius: 12px;
+    padding: 8px 12px;
+    min-height: 36px;
+    transition: background-color 0.2s ease;
+}
+
+.widgy-menu-toggle:hover {
+    background-color: rgba(120, 120, 131, 0.46);
+}
+
+.widgy-menu-toggle.active {
+    background-color: rgba(10, 132, 255, 0.5);
+}
+
+.widgy-menu-music-btn {
+    background-color: rgba(120, 120, 131, 0.36);
+    border-radius: 50%;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 7px;
+    transition: background-color 0.2s ease;
+}
+
+.widgy-menu-music-btn:hover {
+    background-color: rgba(120, 120, 131, 0.46);
+}
+
+.widgy-menu-music-btn:active {
+    background-color: rgba(120, 120, 131, 0.56);
+}
+
+.widgy-menu-music-btn St.Icon {
+    icon-size: 16px;
+    color: #ffffff;
 }

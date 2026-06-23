@@ -2,15 +2,16 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-// Import widgets relative to extension.js
 import { ClockWidget } from './widgets/clock.js';
 import { CalendarWidget } from './widgets/calendar.js';
 import { MusicWidget } from './widgets/music.js';
 import { ControlWidget } from './widgets/control.js';
 import { WeatherWidget } from './widgets/weather.js';
+import { WidgySystemMenu } from './widgets/systemMenu.js';
 
 export default class WidgyExtension extends Extension {
     enable() {
@@ -18,18 +19,29 @@ export default class WidgyExtension extends Extension {
         this._widgetManager = new WidgetManager(this._settings);
         this._widgetManager.loadPositions();
 
-        // If no widgets are saved, create some defaults for demonstration
+        // System menu panel button
+        this._systemMenu = new WidgySystemMenu(this._settings);
+        Main.panel.addToStatusArea('widgy-system-menu', this._systemMenu);
+
+        // Default widget layout — macOS Sonoma desktop style
         if (this._widgetManager.widgets.length === 0) {
-            this._widgetManager.createWidget('clock', 100, 100);
-            this._widgetManager.createWidget('calendar', 300, 100);
-            this._widgetManager.createWidget('music', 100, 300);
-            this._widgetManager.createWidget('control', 300, 300);
-            this._widgetManager.createWidget('weather', 500, 200);
+            // Left column: clock (small) + weather (small) stacked
+            this._widgetManager.createWidget('clock', 60, 60);
+            this._widgetManager.createWidget('weather', 60, 250);
+            // Center: calendar (large)
+            this._widgetManager.createWidget('calendar', 250, 60);
+            // Right column: music (medium) + controls (medium) stacked
+            this._widgetManager.createWidget('music', 600, 60);
+            this._widgetManager.createWidget('control', 600, 230);
             this._widgetManager.savePositions();
         }
     }
 
     disable() {
+        if (this._systemMenu) {
+            this._systemMenu.destroy();
+            this._systemMenu = null;
+        }
         if (this._widgetManager) {
             this._widgetManager.savePositions();
             this._widgetManager.destroy();
@@ -79,25 +91,16 @@ class WidgetManager {
     }
 
     registerDrag(widget, event) {
-        if (this._dragWidget) {
-            return false;
-        }
+        if (this._dragWidget) return false;
         let [startX, startY] = event.get_coords();
         let [actorStartX, actorStartY] = widget.actor.get_position();
         this._dragWidget = widget;
-        this._dragData = {
-            startX,
-            startY,
-            actorStartX,
-            actorStartY
-        };
+        this._dragData = { startX, startY, actorStartX, actorStartY };
         return true;
     }
 
     unregisterDrag(widget) {
-        if (this._dragWidget === widget) {
-            this._endDrag();
-        }
+        if (this._dragWidget === widget) this._endDrag();
     }
 
     _endDrag() {
@@ -111,25 +114,14 @@ class WidgetManager {
     createWidget(type, x, y) {
         let WidgetClass;
         switch (type) {
-            case 'clock':
-                WidgetClass = ClockWidget;
-                break;
-            case 'calendar':
-                WidgetClass = CalendarWidget;
-                break;
-            case 'music':
-                WidgetClass = MusicWidget;
-                break;
-            case 'control':
-                WidgetClass = ControlWidget;
-                break;
-            case 'weather':
-                WidgetClass = WeatherWidget;
-                break;
-            default:
-                throw new Error(`Unknown widget type: ${type}`);
+            case 'clock':    WidgetClass = ClockWidget; break;
+            case 'calendar': WidgetClass = CalendarWidget; break;
+            case 'music':    WidgetClass = MusicWidget; break;
+            case 'control':  WidgetClass = ControlWidget; break;
+            case 'weather':  WidgetClass = WeatherWidget; break;
+            default: throw new Error(`Unknown widget type: ${type}`);
         }
-        
+
         let widget = new WidgetClass(this.settings, this);
         widget.setPosition(x, y);
         widget.onRemove = (w) => this.removeWidget(w);
@@ -154,7 +146,7 @@ class WidgetManager {
             const [x, y] = widget.getPosition();
             children[i] = [widget.type, x, y];
         }
-        const variant = new Gio.Variant('a(sii)', children);
+        const variant = new GLib.Variant('a(sii)', children);
         this.settings.set_value('widget-positions', variant);
     }
 

@@ -1,81 +1,115 @@
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk?version=4.0';
+import St from 'gi://St';
 
 export default class WidgyPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
 
-        // Create page
         const page = new Adw.PreferencesPage();
         window.add(page);
 
-        // Create group
-        const group = new Adw.PreferencesGroup({
-            title: _('General Settings'),
-            description: _('Configure Widgy preferences')
+        // ─── Appearance ───────────────────────────────────
+        const appearanceGroup = new Adw.PreferencesGroup({
+            title: _('Appearance'),
+            description: _('Widget theme and visual style'),
         });
-        page.add(group);
+        page.add(appearanceGroup);
 
-        // 1. Theme Setting
         const themeRow = new Adw.ComboRow({
-            title: _('Preferred Theme'),
-            subtitle: _('Choose widget theme color'),
+            title: _('Theme'),
+            subtitle: _('Follow system, or force dark/light mode'),
             model: new Gtk.StringList({
                 strings: [_('Auto'), _('Dark'), _('Light')]
             })
         });
-        
         const themeChoices = ['auto', 'dark', 'light'];
         let currentTheme = settings.get_string('theme');
         let index = themeChoices.indexOf(currentTheme);
-        if (index !== -1) {
-            themeRow.selected = index;
-        }
+        if (index !== -1) themeRow.selected = index;
         themeRow.connect('notify::selected', () => {
             settings.set_string('theme', themeChoices[themeRow.selected]);
         });
-        group.add(themeRow);
+        appearanceGroup.add(themeRow);
 
-        // 2. Opacity Setting
         const opacityRow = new Adw.ActionRow({
-            title: _('Global Opacity'),
-            subtitle: _('Base opacity for all widgets')
+            title: _('Opacity'),
+            subtitle: _('Widget background opacity (100% = fully opaque)')
         });
-        const opacityScale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.2, 1.0, 0.05);
+        const opacityScale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 20, 100, 5);
         opacityScale.set_draw_value(true);
-        opacityScale.set_value(settings.get_double('opacity'));
+        opacityScale.set_value(settings.get_double('opacity') * 100);
         opacityScale.set_size_request(200, -1);
         opacityScale.connect('value-changed', () => {
-            settings.set_double('opacity', opacityScale.get_value());
+            settings.set_double('opacity', opacityScale.get_value() / 100);
         });
         opacityRow.add_suffix(opacityScale);
-        group.add(opacityRow);
+        appearanceGroup.add(opacityRow);
 
-        // 3. Grid Snapping Setting
+        // ─── Behavior ─────────────────────────────────────
+        const behaviorGroup = new Adw.PreferencesGroup({
+            title: _('Behavior'),
+            description: _('Widget interaction and layout'),
+        });
+        page.add(behaviorGroup);
+
         const snapRow = new Adw.SwitchRow({
-            title: _('Snap widgets to grid'),
-            subtitle: _('Snap widgets to a 20px grid when dragged')
+            title: _('Snap to Grid'),
+            subtitle: _('Align widgets to a 20px grid when dragging')
         });
         snapRow.active = settings.get_boolean('widget-snap-grid');
         snapRow.connect('notify::active', () => {
             settings.set_boolean('widget-snap-grid', snapRow.active);
         });
-        group.add(snapRow);
+        behaviorGroup.add(snapRow);
 
-        // 4. Weather Location Setting
+        // ─── Weather ──────────────────────────────────────
+        const weatherGroup = new Adw.PreferencesGroup({
+            title: _('Weather'),
+            description: _('Configure weather widget location'),
+        });
+        page.add(weatherGroup);
+
         const locationRow = new Adw.ActionRow({
-            title: _('Weather Location'),
+            title: _('Location'),
             subtitle: _('Latitude,longitude (e.g. 40.7128,-74.0060) or "auto"')
         });
         const locationEntry = new Gtk.Entry({
-            text: settings.get_string('weather-location')
+            text: settings.get_string('weather-location'),
+            placeholder_text: 'auto',
         });
         locationEntry.set_hexpand(true);
         locationEntry.connect('notify::text', () => {
             settings.set_string('weather-location', locationEntry.text);
         });
         locationRow.add_suffix(locationEntry);
-        group.add(locationRow);
+        weatherGroup.add(locationRow);
+
+        // ─── Widgets ──────────────────────────────────────
+        const widgetsGroup = new Adw.PreferencesGroup({
+            title: _('Widgets'),
+            description: _('Available widget sizes (macOS Sonoma spec)'),
+        });
+        page.add(widgetsGroup);
+
+        const sizes = [
+            { name: _('Clock'),    size: _('Small — 170×170 pt'), icon: 'weather-clear-symbolic' },
+            { name: _('Weather'),  size: _('Small — 170×170 pt'), icon: 'weather-overcast-symbolic' },
+            { name: _('Music'),    size: _('Medium — 329×155 pt'), icon: 'multimedia-audio-player-symbolic' },
+            { name: _('Controls'), size: _('Medium — 329×155 pt'), icon: 'preferences-other-symbolic' },
+            { name: _('Calendar'), size: _('Large — 329×345 pt'), icon: 'x-office-calendar-symbolic' },
+        ];
+
+        for (let widget of sizes) {
+            let row = new Adw.ActionRow({
+                title: widget.name,
+                subtitle: widget.size,
+            });
+            row.add_prefix(new St.Icon({ icon_name: widget.icon, style: 'icon-size: 16px; margin-right: 8px;' }));
+            // Row is informational
+            row.set_activatable(false);
+            widgetsGroup.add(row);
+        }
     }
 }
