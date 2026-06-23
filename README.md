@@ -121,6 +121,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### v1.0.3
+
+- **Fixed:** Widgets now render below application windows by attaching to `Main.layoutManager._backgroundGroup` instead of `Main.uiGroup`
+- **Fixed:** Proper cleanup of widget actors from background group in `disable()` to prevent memory leaks
+- **Fixed:** Preferences dialog GTK import — corrected to use `Gtk?version=4.0` for GNOME 45+ ESM compatibility
+
 ### v1.0.2
 
 - **Fixed:** Drag no longer activates without a button held — motion handler now checks `event.get_state() & Clutter.ModifierType.BUTTON1_MASK`
@@ -129,6 +135,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Fixed:** Context menu memory leak — PopupMenu instance is now cached and destroyed before creating a new one
 - **Fixed:** Stage motion handler leak on extension disable — properly disconnected in `destroy()`
 - **Style:** `_initContextMenu()` now uses `Clutter.EVENT_STOP`/`Clutter.EVENT_PROPAGATE` for consistency with drag code
+- **Fixed:** Preferences dialog weather location entry — replaced invalid `Adw.Entry` with `Gtk.Entry` for GTK 4 compatibility
 
 ### v1.0.1
 

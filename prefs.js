@@ -1,6 +1,6 @@
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import Adw from 'gi://Adw';
-import Gtk from 'gi://Gtk';
+import Gtk from 'gi://Gtk?version=4.0';
 
 export default class WidgyPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -68,7 +68,7 @@ export default class WidgyPreferences extends ExtensionPreferences {
             title: _('Weather Location'),
             subtitle: _('Latitude,longitude (e.g. 40.7128,-74.0060) or "auto"')
         });
-        const locationEntry = new Adw.Entry({
+        const locationEntry = new Gtk.Entry({
             text: settings.get_string('weather-location')
         });
         locationEntry.set_hexpand(true);

@@ -71,7 +71,7 @@ class WidgetManager {
         widget.setPosition(x, y);
         widget.onRemove = (w) => this.removeWidget(w);
         this.widgets.push(widget);
-        Main.uiGroup.add_child(widget.actor);
+        Main.layoutManager._backgroundGroup.add_child(widget.actor);
         return widget;
     }
 
@@ -109,6 +109,9 @@ class WidgetManager {
 
     destroy() {
         for (let widget of this.widgets) {
+            if (widget.actor) {
+                Main.layoutManager._backgroundGroup.remove_child(widget.actor);
+            }
             widget.destroy();
         }
         this.widgets = [];
