@@ -9,10 +9,10 @@ export class ControlWidget extends BaseWidget {
         super(settings);
         this.type = 'control';
 
-        // Set layout to vertical
         this.actor.orientation = Clutter.Orientation.VERTICAL;
 
         this._toggles = {};
+        this._settingsCache = new Map();
 
         let row1 = new St.BoxLayout({ x_expand: true, y_expand: true, style: 'margin-bottom: 8px;' });
         let row2 = new St.BoxLayout({ x_expand: true, y_expand: true });
@@ -52,9 +52,16 @@ export class ControlWidget extends BaseWidget {
         this._updateToggles();
     }
 
+    _getSettings(schema) {
+        if (!this._settingsCache.has(schema)) {
+            this._settingsCache.set(schema, new Gio.Settings({ schema }));
+        }
+        return this._settingsCache.get(schema);
+    }
+
     _toggleItem(item) {
         try {
-            let settings = new Gio.Settings({ schema: item.setting });
+            let settings = this._getSettings(item.setting);
             let current = settings.get_boolean(item.key);
             settings.set_boolean(item.key, !current);
         } catch (e) {
@@ -67,7 +74,7 @@ export class ControlWidget extends BaseWidget {
         for (let [name, toggle] of Object.entries(this._toggles)) {
             let { button, item } = toggle;
             try {
-                let settings = new Gio.Settings({ schema: item.setting });
+                let settings = this._getSettings(item.setting);
                 let value = settings.get_boolean(item.key);
                 if (value) {
                     button.add_style_class_name('active');

@@ -62,9 +62,10 @@ export class MusicWidget extends BaseWidget {
             style_class: 'widgy-widget-button',
             child: new St.Icon({ icon_name: 'media-skip-backward-symbolic', style_class: 'widgy-widget-icon' })
         });
+        this._playIcon = new St.Icon({ icon_name: 'media-playback-start-symbolic', style_class: 'widgy-widget-icon' });
         this._playButton = new St.Button({
             style_class: 'widgy-widget-button',
-            child: new St.Icon({ icon_name: 'media-playback-start-symbolic', style_class: 'widgy-widget-icon' })
+            child: this._playIcon
         });
         this._nextButton = new St.Button({
             style_class: 'widgy-widget-button',
@@ -211,7 +212,7 @@ export class MusicWidget extends BaseWidget {
 
     _updatePlayButton() {
         let iconName = this._playbackStatus === 'Playing' ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
-        this._playButton.set_child(new St.Icon({ icon_name: iconName, style_class: 'widgy-widget-icon' }));
+        this._playIcon.set_icon_name(iconName);
     }
 
     _previousTrack() {

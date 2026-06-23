@@ -100,8 +100,8 @@ export class BaseWidget {
     }
 
     _showContextMenu(event) {
-        // Destroy existing menu before creating a new one to prevent memory leaks
         if (this._contextMenu) {
+            this._contextMenu.actor.get_parent()?.remove_child(this._contextMenu.actor);
             this._contextMenu.destroy();
             this._contextMenu = null;
         }
@@ -115,7 +115,7 @@ export class BaseWidget {
             menu.close();
         });
         menu.addMenuItem(removeItem);
-        Main.uiGroup.add_child(menu.actor);
+        Main.layoutManager._backgroundGroup.add_child(menu.actor);
         menu.open(true);
 
         this._contextMenu = menu;
